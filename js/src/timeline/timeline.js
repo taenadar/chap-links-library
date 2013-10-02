@@ -389,10 +389,10 @@ links.Timeline.mapColumnIds = function (dataTable) {
         cols.start = 0;
         cols.end = 1;
         cols.content = 2;
-        if (colCount > 3) {cols.group = 3}
-        if (colCount > 4) {cols.className = 4}
-        if (colCount > 5) {cols.editable = 5}
-        if (colCount > 6) {cols.type = 6}
+        if (colCount >= 3) {cols.group = 3}
+        if (colCount >= 4) {cols.className = 4}
+        if (colCount >= 5) {cols.editable = 5}
+        if (colCount >= 6) {cols.type = 6}
     }
 
     return cols;
@@ -431,7 +431,7 @@ links.Timeline.prototype.setData = function(data) {
                 'group':     ((cols.group != undefined)     ? data.getValue(row, cols.group)     : undefined),
                 'className': ((cols.className != undefined) ? data.getValue(row, cols.className) : undefined),
                 'editable':  ((cols.editable != undefined)  ? data.getValue(row, cols.editable)  : undefined),
-                'type':      ((cols.type != undefined)      ? data.getValue(row, cols.type)      : undefined)
+                'type':      ((cols.editable != undefined)  ? data.getValue(row, cols.type)      : undefined)
             }));
         }
     }
@@ -1052,27 +1052,36 @@ links.Timeline.prototype.repaintAxis = function() {
     step.start();
     var xFirstMajorLabel = undefined;
     var max = 0;
+    var xCorrection = 0;
     while (!step.end() && max < 1000) {
         max++;
         var cur = step.getCurrent(),
             x = this.timeToScreen(cur),
             isMajor = step.isMajor();
+        //console.log("cur: " + cur + " x: " + x);
+        x = x - xCorrection;
 
-        if (options.showMinorLabels) {
-            this.repaintAxisMinorText(x, step.getLabelMinor(options));
-        }
+        if (cur.getDay() == 6 || cur.getDay() == 0) {
+            xCorrection += 60;
+        } else {
 
-        if (isMajor && options.showMajorLabels) {
-            if (x > 0) {
-                if (xFirstMajorLabel == undefined) {
-                    xFirstMajorLabel = x;
-                }
-                this.repaintAxisMajorText(x, step.getLabelMajor(options));
+
+            if (options.showMinorLabels) {
+                this.repaintAxisMinorText(x, step.getLabelMinor(options));
             }
-            this.repaintAxisMajorLine(x);
-        }
-        else {
-            this.repaintAxisMinorLine(x);
+
+            if (isMajor && options.showMajorLabels) {
+                if (x > 0) {
+                    if (xFirstMajorLabel == undefined) {
+                        xFirstMajorLabel = x;
+                    }
+                    this.repaintAxisMajorText(x, step.getLabelMajor(options));
+                }
+                this.repaintAxisMajorLine(x);
+            }
+            else {
+                this.repaintAxisMinorLine(x);
+            }
         }
 
         step.next();
@@ -4350,10 +4359,10 @@ links.Timeline.prototype.getItem = function (index) {
     if (item.group) {
         properties.group = this.getGroupName(item.group);
     }
-    if (item.className) {
-        properties.className = item.className;
+    if ('className' in item) {
+        properties.className = this.getGroupName(item.className);
     }
-    if (typeof item.editable !== 'undefined') {
+    if (item.hasOwnProperty('editable') && (typeof item.editable != 'undefined')) {
         properties.editable = item.editable;
     }
     if (item.type) {
@@ -5578,6 +5587,8 @@ links.Timeline.StepDate.prototype.setRange = function(start, end, minimumStep) {
 
     this._start = (start != undefined) ? new Date(start.valueOf()) : new Date();
     this._end = (end != undefined) ? new Date(end.valueOf()) : new Date();
+
+    this._end.setDate(this._end.getDate() + 9);
 
     if (this.autoScale) {
         this.setMinimumStep(minimumStep);
