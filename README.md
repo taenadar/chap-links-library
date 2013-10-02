@@ -12,3 +12,6 @@ for Javascript and GWT.
 
 Links Library is part of [CHAP](http://chap.almende.com), 
 the Common Hybrid Agent Platform.
+
+
+This versions of the timeline shows no weekends. Use the scale.DAY and disable zooming for this to work!
